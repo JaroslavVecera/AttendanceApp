@@ -1,5 +1,6 @@
 package com.example.attendanceapp
 
+import AttendanceViewModel
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
@@ -9,9 +10,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Checkbox
@@ -37,82 +40,54 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
-            var data by remember { mutableStateOf<List<RowData>?>(null) }
+            AttendanceAppTheme {
+                AttendanceList()
+            }
+        }
+    }
+}
 
-            val pollingInterval = 5_000L
+@Composable
+fun AttendanceList(viewModel: AttendanceViewModel = viewModel()) {
+    val data = viewModel.data
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        viewModel.startPolling(context)
+    }
 
-            val spreadsheetId = getSpreadsheetId(this)
-            LaunchedEffect(Unit) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    while (true) {
-                        try {
-                            val googleSheetsHelper = GoogleSheetsHelper(context = applicationContext)
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        itemsIndexed(data) { index, row ->
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .padding(top = 16.dp)
+            ) {
+                TextField(
+                    value = row.firstName,
+                    onValueChange = { newName ->
+                        val updatedRow = row.copy(firstName = newName)
+                        viewModel.updateRow(index, updatedRow)
+                        viewModel.sendUpdatedRow(updatedRow)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
 
-                            val fetchedData = googleSheetsHelper.getData(spreadsheetId)
-
-                            withContext(Dispatchers.Main) {
-                                data = fetchedData
-                            }
-
-                            delay(pollingInterval)
-                        } catch (e: Exception) {
-                            Log.d("TAG", e.message.toString())
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(
-                                    applicationContext,
-                                    "Error loading data",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
+                Checkbox(
+                    checked = row.present,
+                    onCheckedChange = { newPresent ->
+                        val updatedRow = row.copy(present = newPresent)
+                        viewModel.updateRow(index, updatedRow)
+                        viewModel.sendUpdatedRow(updatedRow)
                     }
-                }
-            }
-
-            MaterialTheme {
-                if (data == null) {
-                    Text("Loading data...")
-                } else {
-                    DataList(data = data ?: emptyList())
-                }
+                )
             }
         }
     }
-}
-
-@Composable
-fun DataList(data: List<RowData>) {
-    LazyColumn {
-        itemsIndexed(data, key = { index, _ -> index }) { index, row ->
-            RowItem(row = row)
-        }
-    }
-}
-
-@Composable
-fun RowItem(row: RowData) {
-    Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-        TextField(
-            value = row.surname,
-            onValueChange = { },
-            modifier = Modifier.weight(1f)
-        )
-        Checkbox(
-            checked = row.present,
-            onCheckedChange = { }
-        )
-    }
-}
-
-fun getSpreadsheetId(context: Context): String {
-    val inputStream = context.resources.openRawResource(R.raw.sheet)
-    val json = inputStream.bufferedReader().use { it.readText() }
-    val jsonObject = JSONObject(json)
-    return jsonObject.getString("id")
 }

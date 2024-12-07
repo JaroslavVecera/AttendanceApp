@@ -65,6 +65,7 @@ dependencies {
     implementation("com.google.auth:google-auth-library-oauth2-http:1.15.0")
     implementation("com.google.api-client:google-api-client:1.32.1")
     implementation("com.google.http-client:google-http-client-gson:1.43.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
