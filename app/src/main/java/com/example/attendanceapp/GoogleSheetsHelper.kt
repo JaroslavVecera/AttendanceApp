@@ -1,6 +1,7 @@
 package com.example.attendanceapp
 
 import android.content.Context
+import com.example.attendanceapp.model.RowData
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.api.services.sheets.v4.Sheets
@@ -25,11 +26,33 @@ class GoogleSheetsHelper(context: Context) {
             .build()
     }
 
-    fun getData(spreadsheetId: String, range: String): List<List<String>> {
+    fun getData(spreadsheetId: String): List<RowData> {
         val response: ValueRange = sheetsService.spreadsheets().values()
-            .get(spreadsheetId, range)
+            .get(spreadsheetId, "Data!A:H")
             .execute()
-        return response.getValues().map { s -> s.map { t -> t.toString() } } ?: emptyList()
+
+        val values = response.getValues() ?: emptyList()
+
+        return values.mapNotNull { row ->
+            if (row.size >= 8) {
+                try {
+                    RowData(
+                        row[0] as String,
+                        row[1] as String,
+                        row[2] as String == "1",
+                        row[3] as String == "1",
+                        row[4] as String == "1",
+                        row[5] as String == "1",
+                        row[6] as String == "1",
+                        row[1] as String
+                    )
+                } catch (e: Exception) {
+                    null
+                }
+            } else {
+                null
+            }
+        }
     }
 
     fun updateData(spreadsheetId: String, range: String, values: List<List<Any>>) {

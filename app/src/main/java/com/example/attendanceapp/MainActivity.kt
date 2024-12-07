@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.attendanceapp.model.RowData
 import com.example.attendanceapp.ui.theme.AttendanceAppTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +43,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            var data by remember { mutableStateOf<List<List<String>>?>(null) }
+            var data by remember { mutableStateOf<List<RowData>?>(null) }
 
             val pollingInterval = 5_000L
 
@@ -51,11 +52,9 @@ class MainActivity : ComponentActivity() {
                 CoroutineScope(Dispatchers.IO).launch {
                     while (true) {
                         try {
-                            val googleSheetsHelper =
-                                GoogleSheetsHelper(context = applicationContext)
+                            val googleSheetsHelper = GoogleSheetsHelper(context = applicationContext)
 
-                            val range = "Data!A:C"
-                            val fetchedData = googleSheetsHelper.getData(spreadsheetId, range)
+                            val fetchedData = googleSheetsHelper.getData(spreadsheetId)
 
                             withContext(Dispatchers.Main) {
                                 data = fetchedData
@@ -88,7 +87,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun DataList(data: List<List<String>>) {
+fun DataList(data: List<RowData>) {
     LazyColumn {
         itemsIndexed(data, key = { index, _ -> index }) { index, row ->
             RowItem(row = row)
@@ -97,15 +96,15 @@ fun DataList(data: List<List<String>>) {
 }
 
 @Composable
-fun RowItem(row: List<String>) {
+fun RowItem(row: RowData) {
     Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
         TextField(
-            value = row[0],
+            value = row.surname,
             onValueChange = { },
             modifier = Modifier.weight(1f)
         )
         Checkbox(
-            checked = row[1] == "1",
+            checked = row.present,
             onCheckedChange = { }
         )
     }

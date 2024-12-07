@@ -1,7 +1,12 @@
 package com.example.attendanceapp.model
 
 data class RowData(
-    val name: String,
-    val status: String,
-    val isPresent: Boolean
+    val firstName: String,
+    val surname: String,
+    val bowling1: Boolean,
+    val bowling2: Boolean,
+    val quiz1: Boolean,
+    val quiz2: Boolean,
+    val present: Boolean,
+    val note: String
 )
