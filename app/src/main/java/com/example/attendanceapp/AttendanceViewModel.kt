@@ -9,26 +9,25 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 
 class AttendanceViewModel() : ViewModel() {
     private val _data: MutableList<RowData> = mutableStateListOf()
 
     val data: List<RowData> get() = _data
+    var googleSheetsHelper: GoogleSheetsHelper? = null
 
-    suspend fun fetchDataFromSheet(context: Context): List<RowData> {
-        val googleSheetsHelper = GoogleSheetsHelper(context = context)
+    suspend fun fetchDataFromSheet(context: Context, spreadsheetId: String): List<RowData> {
+        googleSheetsHelper = GoogleSheetsHelper(context = context)
 
-        val spreadsheetId = getSpreadsheetId(context)
-        val fetchedData = googleSheetsHelper.getData(spreadsheetId)
+        val fetchedData = googleSheetsHelper!!.getData(spreadsheetId)
         return fetchedData
     }
 
-    fun startPolling(context: Context) {
+    fun startPolling(context: Context, spreadsheetId: String) {
         viewModelScope.launch {
             while (true) {
                 withContext(Dispatchers.IO) {
-                    val fetchedData = fetchDataFromSheet(context)
+                    val fetchedData = fetchDataFromSheet(context, spreadsheetId)
                     _data.clear()
                     _data.addAll(fetchedData)
                 }
@@ -37,18 +36,20 @@ class AttendanceViewModel() : ViewModel() {
         }
     }
 
-    fun updateRow(index: Int, newRowData: RowData) {
-        _data[index] = newRowData
+    fun updateRow(newRowData: RowData) {
+        println("sort" + newRowData.index)
+        _data[newRowData.index] = newRowData
     }
 
-    fun sendUpdatedRow(rowData: RowData) {
-        // Implementace pro odeslání dat
+    fun sendUpdatedRow(rowData: RowData, spreadsheetId: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                googleSheetsHelper!!.updateRow(spreadsheetId, rowData.index, rowData)
+            }
+        }
     }
 
-    private fun getSpreadsheetId(context: Context): String {
-        val inputStream = context.resources.openRawResource(R.raw.sheet)
-        val json = inputStream.bufferedReader().use { it.readText() }
-        val jsonObject = JSONObject(json)
-        return jsonObject.getString("id")
+    fun sortBySurname() {
+        _data.sortBy { it.surname }
     }
 }

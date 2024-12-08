@@ -1,6 +1,7 @@
 package com.example.attendanceapp.model
 
 data class RowData(
+    val index: Int,
     val firstName: String,
     val surname: String,
     val bowling1: Boolean,

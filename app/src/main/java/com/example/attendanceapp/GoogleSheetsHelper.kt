@@ -32,11 +32,12 @@ class GoogleSheetsHelper(context: Context) {
             .execute()
 
         val values = response.getValues() ?: emptyList()
-
+        var i = 0
         return values.mapNotNull { row ->
             if (row.size >= 8) {
                 try {
                     RowData(
+                        i++,
                         row[0] as String,
                         row[1] as String,
                         row[2] as String == "1",
@@ -44,7 +45,7 @@ class GoogleSheetsHelper(context: Context) {
                         row[4] as String == "1",
                         row[5] as String == "1",
                         row[6] as String == "1",
-                        row[1] as String
+                        row[7] as String
                     )
                 } catch (e: Exception) {
                     null
@@ -55,12 +56,23 @@ class GoogleSheetsHelper(context: Context) {
         }
     }
 
-    fun updateData(spreadsheetId: String, range: String, values: List<List<Any>>) {
-        val body = ValueRange().setValues(values)
-        sheetsService.spreadsheets().values()
-            .update(spreadsheetId, range, body)
+    fun updateRow(spreadsheetId: String, row: Int, updatedRow: RowData) {
+        val index = row + 1
+        val range = "Data!A$index:H$index"
+        val valueRange = ValueRange().setValues(listOf(listOf(
+            updatedRow.firstName,
+            updatedRow.surname,
+            if (updatedRow.bowling1) 1 else 0,
+            if (updatedRow.bowling2) 1 else 0,
+            if (updatedRow.quiz1) 1 else 0,
+            if (updatedRow.quiz2) 1 else 0,
+            if (updatedRow.present) 1 else 0,
+            updatedRow.note)))
+
+        val updateRequest = sheetsService.spreadsheets().values()
+            .update(spreadsheetId, range, valueRange)
             .setValueInputOption("RAW")
-            .execute()
+        updateRequest.execute()
     }
 }
 
