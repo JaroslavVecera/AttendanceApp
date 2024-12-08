@@ -25,15 +25,18 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.attendanceapp.model.RowData
 import com.example.attendanceapp.ui.theme.AttendanceAppTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.attendanceapp.model.SortDirection
 import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
@@ -50,14 +53,18 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AttendanceScreen(viewModel: AttendanceViewModel = viewModel()) {
     var searchQuery by remember { mutableStateOf("") }
-    val filteredList = remember(searchQuery) {
-        when (searchQuery) {
-            "" -> viewModel.data
-            else -> viewModel.data.filter {
-                it.firstName.contains(searchQuery, ignoreCase = true)
+    var sorted by remember { mutableStateOf(SortDirection.None) }
+    val filteredList = viewModel.data
+        .filter { row ->
+            searchQuery.isEmpty() || row.firstName.contains(searchQuery, ignoreCase = true)
+        }
+        .let { list ->
+            when (sorted) {
+                SortDirection.Asc -> list.sortedBy { it.surname }
+                SortDirection.Desc -> list.sortedByDescending { it.surname }
+                else -> list
             }
         }
-    }
 
     val spreadsheetId = getSpreadsheetId(LocalContext.current)
     val columns = listOf("First name", "Surname", "Bowling", "Bowling", "Quiz", "Quiz", "Present", "Note")
@@ -96,7 +103,7 @@ fun AttendanceScreen(viewModel: AttendanceViewModel = viewModel()) {
                         if (column == "Surname") {
                             Button(
                                 onClick = {
-                                    viewModel.sortBySurname()
+                                    sorted = sorted.next()
                                 },
                                 modifier = Modifier.padding(start = 8.dp)
                             ) {
@@ -117,7 +124,8 @@ fun AttendanceScreen(viewModel: AttendanceViewModel = viewModel()) {
 @Composable
 fun AttendanceList(data: List<RowData>, viewModel: AttendanceViewModel, weights: List<Float>, spreadsheetId: String) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        itemsIndexed(data) { index, row ->
+        items(data.size, key = { it -> data[it].index }) { index ->
+            val row = data[index]
             Row(modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
