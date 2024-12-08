@@ -16,8 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -30,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -88,12 +95,14 @@ fun AttendanceScreen(viewModel: AttendanceViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 columns.forEachIndexed() { index, column ->
                     Row(
                         modifier = Modifier
-                            .weight(weights[index])
+                            .weight(weights[index]),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = column,
@@ -101,13 +110,16 @@ fun AttendanceScreen(viewModel: AttendanceViewModel = viewModel()) {
                             style = MaterialTheme.typography.bodyLarge
                         )
                         if (column == "Surname") {
-                            Button(
-                                onClick = {
-                                    sorted = sorted.next()
-                                },
-                                modifier = Modifier.padding(start = 8.dp)
-                            ) {
-                                Text("Sort")
+                            IconButton(onClick = {
+                                sorted = sorted.next()
+                            }) {
+                                Icon(
+                                    imageVector = when (sorted) {
+                                        SortDirection.None -> Icons.Default.MoreVert
+                                        SortDirection.Asc -> Icons.Default.KeyboardArrowUp
+                                        SortDirection.Desc -> Icons.Default.KeyboardArrowDown
+                                    }, ""
+                                )
                             }
                         }
                     }
@@ -129,7 +141,8 @@ fun AttendanceList(data: List<RowData>, viewModel: AttendanceViewModel, weights:
             Row(modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
-                .padding(top = 16.dp)
+                .padding(top = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
 
                 Text(
